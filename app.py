@@ -9,6 +9,7 @@ from PySide6.QtGui import QPixmap, QPainter, QColor
 from PySide6.QtWidgets import QGraphicsOpacityEffect
 from PySide6.QtCore import QPropertyAnimation
 from datetime import datetime
+from sensors.gpio_sensors import setup_doors
 import random
 
 
@@ -139,9 +140,7 @@ class Dashboard(QWidget):
 
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
-
         self.input_buffer = ""
-
         self.command_mode = False
         self.setStyleSheet("""
             background-color: #1c1c1c;
@@ -151,15 +150,15 @@ class Dashboard(QWidget):
             border: 3px solid #00ffcc;
             border-radius: 12px;
         """)
-        #self.setStyleSheet("background-color: #0a0a0a;color: #00ffcc;")
 
+        # cursor piscante
         self.cursor_visible = True
-        self.base_title = "SENSORES"
+        self.base_title = "> DARLENE OS:~$ "
         self.cursor_timer = QTimer()
         self.cursor_timer.timeout.connect(self.update_cursor)
         self.cursor_timer.start(500)  # pisca a cada 0.5s
 
-        main_layout = QVBoxLayout()
+
         outer_layout = QVBoxLayout()
         outer_layout.setContentsMargins(8, 8, 8, 8)  # espaço da borda
 
@@ -175,20 +174,17 @@ class Dashboard(QWidget):
 
         main_layout = QVBoxLayout()
         self.container.setLayout(main_layout)
-
         outer_layout.addWidget(self.container)
         self.setLayout(outer_layout)
 
-
         self.kombi_view = KombiWidget()
         self.credits_view = CreditsWidget()
-
         main_layout.addWidget(self.kombi_view)
         main_layout.addWidget(self.credits_view)
-
         self.kombi_view.setVisible(False)
         self.credits_view.setVisible(False)
 
+        # pop up de saida
         self.code_popup = QLabel(self)
         self.code_popup.setAlignment(Qt.AlignCenter)
 
@@ -206,13 +202,11 @@ class Dashboard(QWidget):
             (self.width() - 200) // 2,
             (self.height() - 100) // 2
         )
-
         self.code_popup.hide()
-        self.showFullScreen()
+
 
         # CARDS
         self.cards = []
-
         grid = QGridLayout()
 
         self.devices_config = [
@@ -244,8 +238,6 @@ class Dashboard(QWidget):
         self.numeric_devices = [d for d in self.devices_config if d["type"] == "numeric"]
         self.digital_devices = [d for d in self.devices_config if d["type"] == "digital"]
         self.door_devices = [d for d in self.devices_config if d["type"] == "door"]
-
-        from sensors.gpio_sensors import setup_doors
         setup_doors(self.door_devices)
 
         devices = self.numeric_devices + self.digital_devices
@@ -266,7 +258,7 @@ class Dashboard(QWidget):
         header_layout = QHBoxLayout()
 
         self.header_container = QWidget()
-        self.header_container.setFixedHeight(40)  # 🔥 altura fixa
+        self.header_container.setFixedHeight(40)  # altura fixa
 
         self.header_container.setStyleSheet("""
             background-color: #111;
@@ -275,7 +267,7 @@ class Dashboard(QWidget):
         """)
 
         # título
-        self.header_title = QLabel("@DARLENE OS:~$ ")
+        self.header_title = QLabel("> DARLENE OS:~$ ")
         self.header_title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.header_title.setStyleSheet("""
             font-size: 24px;
@@ -293,23 +285,14 @@ class Dashboard(QWidget):
         """)
 
         # layout interno
-        #self.header_icon = QLabel("⚡")
-        #self.header_icon.setStyleSheet("font-size: 16px; color: #ffaa00;")
-        #header_layout.addStretch()
-        #header_layout.addWidget(self.header_icon)
-        #header_layout.addStretch()
         header_layout.addWidget(self.header_title)
         header_layout.addStretch()
         header_layout.addWidget(self.header_time)
-
         self.header_container.setLayout(header_layout)
 
-        # adicionar no topo
+        # distribuicao do layout
         main_layout.insertWidget(0, self.header_container)
-
-
         main_layout.addLayout(self.grid)
-       # self.setLayout(main_layout)
 
         # timer
         self.timer = QTimer()
@@ -317,8 +300,19 @@ class Dashboard(QWidget):
         self.timer.start(1000)
 
         self.blink_state = True
-
         self.current_page = "sensors"
+        self.showFullScreen()
+
+
+    def next_page(self):
+        idx = self.pages.index(self.current_page)
+        idx = (idx + 1) % len(self.pages)
+        self.current_page = self.pages[idx]
+
+    def prev_page(self):
+        idx = self.pages.index(self.current_page)
+        idx = (idx - 1) % len(self.pages)
+        self.current_page = self.pages[idx]
 
     def update_cursor(self):
         if self.cursor_visible:
