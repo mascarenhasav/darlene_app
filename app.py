@@ -754,7 +754,7 @@ class GraphWidget(QWidget):
             QPushButton {
                 background-color: #111;
                 color: #ffaa00;
-                border: 2px solid black;
+                border: 1px solid #00ffcc;
                 font-size: 18px;
             }
 
@@ -823,9 +823,9 @@ class GraphWidget(QWidget):
             if key == self.selected_sensor:
                 btn.setStyleSheet("""
                     QPushButton {
-                        background-color: #ffaa00;
-                        color: #00ffcc;
-                        border: 2px solid black;
+                        background-color: #00ffcc;
+                        color: #b0b0b0;
+                        border: 1px solid black;
                         font-size: 18px;
                     }
                 """)
