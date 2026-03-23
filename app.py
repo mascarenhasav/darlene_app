@@ -1,5 +1,3 @@
-from sys import last_value
-
 from PySide6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout,
     QPushButton, QHBoxLayout, QFrame
