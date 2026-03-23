@@ -8,10 +8,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QPainter, QColor
 from PySide6.QtWidgets import QGraphicsOpacityEffect
 from PySide6.QtCore import QPropertyAnimation
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 from datetime import datetime
 from sensors.gpio_sensors import setup_doors
+from PySide6.QtGui import QPen
 import random
-
+import time
+import pandas as pd
 
 EXIT_CODE = "1234"
 from PySide6.QtCore import QTimer, Qt
@@ -130,7 +134,7 @@ class Card(QFrame):
 
         # efeito glow leve (simulado via sombra visual)
         self.title.setStyleSheet(f"""
-            font-size: 23px;
+            font-size: 26px;
             color: {color};
         """)
 
@@ -179,10 +183,14 @@ class Dashboard(QWidget):
 
         self.kombi_view = KombiWidget()
         self.credits_view = CreditsWidget()
-        main_layout.addWidget(self.kombi_view)
-        main_layout.addWidget(self.credits_view)
+        #main_layout.addWidget(self.kombi_view)
+        #main_layout.addWidget(self.credits_view)
         self.kombi_view.setVisible(False)
         self.credits_view.setVisible(False)
+
+        # GRAFICOS
+        self.graph_view = GraphWidget()
+        self.graph_view.setVisible(False)
 
         # pop up de saida
         self.code_popup = QLabel(self)
@@ -225,14 +233,14 @@ class Dashboard(QWidget):
 
             # portas físicas (GPIO)
             {"name": "> MOTORISTA", "pin": 17, "type": "door", "pos": (0.12, 0.19)},
-            {"name": "> PASSAGEIRO", "pin": 18, "type": "door", "pos": (0.5, 0.73)},
-            {"name": "> CASA", "pin": 19, "type": "door", "pos": (0.32, 0.75)},
-            {"name": "> MALA", "pin": 20,  "type": "door", "pos": (0.84, 0.68)},
-            {"name": "> MOTOR", "pin": 21,  "type": "door", "pos": (0.84, 0.82)},
-            {"name": "> MOTORISTA", "pin": 17, "type": "door", "pos": (0.12, 0.19)},
-            {"name": "> PASSAGEIRO", "pin": 18, "type": "door", "pos": (0.5, 0.73)},
-            {"name": "> CASA", "pin": 19, "type": "door", "pos": (0.32, 0.75)},
-            {"name": "> MALA", "pin": 20,  "type": "door", "pos": (0.84, 0.68)},
+            {"name": "> PASSAGEIRO", "pin": 27, "type": "door", "pos": (0.5, 0.73)},
+            {"name": "> CASA", "pin": 22, "type": "door", "pos": (0.32, 0.75)},
+            {"name": "> MALA", "pin": 23,  "type": "door", "pos": (0.84, 0.68)},
+            {"name": "> MOTOR", "pin": 24,  "type": "door", "pos": (0.84, 0.82)},
+            {"name": "> DISPONIVEL", "pin": 17, "type": "door", "pos": (0, 0)},
+            {"name": "> DISPONIVEL", "pin": 18, "type": "door", "pos": (0, 0)},
+            {"name": "> DISPONIVEL", "pin": 19, "type": "door", "pos": (0, 0)},
+            {"name": "> DISPONIVEL", "pin": 20,  "type": "door", "pos": (0, 0)},
         ]
 
         self.numeric_devices = [d for d in self.devices_config if d["type"] == "numeric"]
@@ -293,16 +301,52 @@ class Dashboard(QWidget):
         # distribuicao do layout
         main_layout.insertWidget(0, self.header_container)
         main_layout.addLayout(self.grid)
+        main_layout.addWidget(self.kombi_view)
+        main_layout.addWidget(self.credits_view)
+        main_layout.addWidget(self.graph_view)
 
         # timer
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_data)
         self.timer.start(1000)
 
+        self.last_states = {}
+        self.last_log_time = 0
+
         self.blink_state = True
         self.current_page = "sensors"
         self.showFullScreen()
 
+    def log_sensors(self, data):
+        import os
+        from datetime import datetime
+
+        filename = "sensors_log.csv"
+
+        # verifica se arquivo existe
+        file_exists = os.path.isfile(filename)
+
+        with open(filename, "a") as f:
+            # cria header na primeira vez
+            if not file_exists:
+                header = "timestamp," + ",".join(data.keys()) + "\n"
+                f.write(header)
+
+            # escreve linha
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            values = ",".join(str(v) for v in data.values())
+
+            f.write(f"{now},{values}\n")
+
+    def log_event(self, message):
+        from datetime import datetime
+
+        now = datetime.now().strftime("%H:%M:%S")
+
+        line = f"{now} - {message}\n"
+
+        with open("darlene.log", "a") as f:
+            f.write(line)
 
     def next_page(self):
         idx = self.pages.index(self.current_page)
@@ -343,6 +387,7 @@ class Dashboard(QWidget):
     def update_data(self):
         now = datetime.now().strftime("%H:%M")
         self.header_time.setText(now)
+        sensor_data = {}
 
         if self.current_page == "sensors":
             self.base_title = "> DARLENE OS:~$ SENSORES"
@@ -352,6 +397,9 @@ class Dashboard(QWidget):
 
         elif self.current_page == "doors":
             self.base_title = "> DARLENE OS:~$ PORTAS - IMG"
+
+        elif self.current_page == "graphs":
+            self.base_title = "> DARLENE OS:~$ GRÁFICOS"
 
         elif self.current_page == "credits":
             self.base_title = "> DARLENE OS:~$ SOBRE"
@@ -370,9 +418,22 @@ class Dashboard(QWidget):
                 card.setVisible(True)
                 card.title.setText(device["name"])
 
-                if (device["name"] == "> BATERIA 1") or (device["name"] == "> BATERIA 2") :
+                if (device["name"] == "> BATERIA 1"):
                     value = 12.5
                     unit = device.get("unit", "")
+                    sensor_data["bateria1"] = value
+                    card.value.setText(f"-> {value} {unit}")
+                    if value > 14:
+                        color = "#ff3333" if self.blink_state else "#440000"
+                        card.set_color(color)
+                    elif value > 11.5:
+                        card.set_color("#468a1a")
+                    else:
+                        card.set_color("#ffaa00")
+                if (device["name"] == "> BATERIA 2") :
+                    value = 12.5
+                    unit = device.get("unit", "")
+                    sensor_data["bateria2"] = value
                     card.value.setText(f"-> {value} {unit}")
                     if value > 14:
                         color = "#ff3333" if self.blink_state else "#440000"
@@ -384,6 +445,7 @@ class Dashboard(QWidget):
                 elif device["name"] == "> TEMP MOTOR":
                     value = 102
                     unit = device.get("unit", "")
+                    sensor_data["temp_motor"] = value
                     card.value.setText(f"-> {value} {unit}")
                     if value > 100:
                         color = "#ff3333" if self.blink_state else "#440000"
@@ -395,6 +457,7 @@ class Dashboard(QWidget):
                 elif device["name"] == "> ÁGUA LIMPA":
                     value = 80
                     unit = device.get("unit", "")
+                    sensor_data["agua_limpa"] = value
                     card.value.setText(f"-> {value} {unit}")
                     if value > 70:
                         card.set_color("#468a1a")
@@ -406,6 +469,7 @@ class Dashboard(QWidget):
                 elif device["name"] == "> ÁGUA SUJA":
                     value = 32
                     unit = device.get("unit", "")
+                    sensor_data["agua_suja"] = value
                     card.value.setText(f"-> {value} {unit}")
                     if value > 70:
                         color = "#ff3333" if self.blink_state else "#440000"
@@ -416,11 +480,13 @@ class Dashboard(QWidget):
                         card.set_color("#468a1a")
                 elif device["name"] == "> INVERSOR":
                     state = False
+                    sensor_data["inversor"] = state
                     card.value.setText("-> ON" if state else "-> OFF")
                     card.set_color("#468a1a" if state else "#ff3333")
                 elif device["name"] == "> SOLAR":
                     value = 10
                     unit = device.get("unit", "")
+                    sensor_data["solar"] = value
                     card.value.setText(f"-> {value} {unit}")
                     if value > 10:
                         card.set_color("#468a1a")
@@ -432,6 +498,7 @@ class Dashboard(QWidget):
                 elif device["name"] == "> CONSUMO":
                     value = 30
                     unit = device.get("unit", "")
+                    sensor_data["consumo"] = value
                     card.value.setText(f"-> {value} {unit}")
                     if value > 60:
                         color = "#ff3333" if self.blink_state else "#440000"
@@ -442,9 +509,15 @@ class Dashboard(QWidget):
                         card.set_color("#468a1a")
                 elif device["name"] == "> BOMBA ÁGUA":
                     state = True
+                    sensor_data["bomba_agua"] = state
                     card.value.setText("-> ON" if state else "-> OFF")
                     card.set_color("#468a1a" if state else "#ff3333")
 
+            current_time = time.time()
+
+            if current_time - self.last_log_time >= 60:
+                self.log_sensors(sensor_data)
+                self.last_log_time = current_time
 
         elif self.current_page == "status":
             door_states = read_doors(self.door_devices)
@@ -458,11 +531,25 @@ class Dashboard(QWidget):
 
                 state = door_states[name]
 
+                last_state = self.last_states.get(name)
+
+                if last_state is None:
+                    self.last_states[name] = state
+                    continue
+
+                if state != last_state:
+                    if state:
+                        self.log_event(f"PORTA {name} ABERTA (GPIO {device['pin']})")
+                    else:
+                        self.log_event(f"PORTA {name} FECHADA (GPIO {device['pin']})")
+
+                    self.last_states[name] = state
+
                 if state:
-                    card.value.setText("- ABERTA")
+                    card.value.setText("-> ABERTA")
                     card.set_color("#ff3333")
                 else:
-                    card.value.setText("- FECHADA")
+                    card.value.setText("-> FECHADA")
                     card.set_color("#468a1a")
 
         elif self.current_page == "doors":
@@ -470,6 +557,9 @@ class Dashboard(QWidget):
             self.kombi_view.update_data(self.door_devices, door_states)
             self.kombi_view.setVisible(True)
 
+        elif self.current_page == "graphs":
+            self.graph_view.update_plot()
+            self.graph_view.setVisible(True)
 
         elif self.current_page == "credits":
             self.credits_view.setVisible(True)
@@ -492,6 +582,7 @@ class Dashboard(QWidget):
 
         self.kombi_view.setVisible(False)
         self.credits_view.setVisible(False)
+        self.graph_view.setVisible(False)
 
     def toggle_menu(self):
         self.menu.setVisible(not self.menu.isVisible())
@@ -556,6 +647,9 @@ class Dashboard(QWidget):
             self.current_page = "doors"
 
         elif key == "4":
+            self.current_page = "graphs"
+
+        elif key == "5":
             self.current_page = "credits"
 
         self.input_buffer = ""
@@ -564,6 +658,7 @@ class Dashboard(QWidget):
 
     def mousePressEvent(self, event):
         self.setFocus()
+
 class KombiWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -602,6 +697,11 @@ class KombiWidget(QWidget):
             else:
                 color = "#468a1a"
 
+            # borda preta
+            pen = QPen(QColor("#000000"))
+            pen.setWidth(2)
+            painter.setPen(pen)
+
             painter.setBrush(QColor(color))
             painter.drawEllipse(x, y, 30, 30)
 
@@ -627,6 +727,95 @@ class CreditsWidget(QWidget):
 
         self.setLayout(layout)
 
+class GraphWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.selected_sensor = "bateria1"
+
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.last_update = 0
+
+        # botões
+        self.btn_layout = QHBoxLayout()
+
+        self.buttons = {}
+
+        sensors = {
+            "bateria1": "BAT 1",
+            "bateria2": "BAT 2",
+            "temp_motor": "TEMP",
+            "agua_limpa": "AGUA",
+        }
+
+        for key, label in sensors.items():
+            btn = QPushButton(label)
+            btn.setFixedHeight(35)
+
+            btn.clicked.connect(lambda _, k=key: self.select_sensor(k))
+            btn.setStyleSheet("""
+                background-color: #111;
+                color: #ffaa00;
+                border: 2px solid black;
+                font-size: 18px;
+            }
+
+            QPushButton:pressed {
+                color: #00ffcc;
+            }
+            """)
+
+            self.buttons[key] = btn
+            self.btn_layout.addWidget(btn)
+
+        # layout geral
+        layout = QVBoxLayout()
+        layout.addLayout(self.btn_layout)
+        layout.addWidget(self.canvas)
+
+        self.setLayout(layout)
+
+    def select_sensor(self, sensor):
+        self.selected_sensor = sensor
+        self.update_plot()
+
+    def update_plot(self):
+        #if time.time() - self.last_update < 5:
+            #return
+
+        #self.last_update = time.time()
+
+        try:
+            df = pd.read_csv("sensors_log.csv")
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            #df = df.tail(50)
+
+            self.figure.clear()
+            ax = self.figure.add_subplot(111)
+            ax.grid(True)
+            ax.set_facecolor("#1c1c1c")
+            self.figure.set_facecolor("#1c1c1c")
+            ax.tick_params(colors="#00ffcc")
+            ax.spines[:].set_color("#00ffcc")
+
+
+            if self.selected_sensor in df.columns:
+                ax.plot(df["timestamp"], df[self.selected_sensor], color="#00ffcc")
+
+            ax.set_title(
+                self.selected_sensor.upper(),
+                color="#00ffcc",
+                fontsize=12
+            )
+            ax.tick_params(axis='x', colors="#00ffcc")
+            ax.tick_params(axis='y', colors="#00ffcc")
+            ax.tick_params(axis='x', rotation=45)
+
+            self.canvas.draw()
+
+        except Exception as e:
+            print("Erro gráfico:", e)
 
 app = QApplication([])
 
