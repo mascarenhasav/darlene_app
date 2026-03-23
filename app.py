@@ -742,18 +742,35 @@ class GraphWidget(QWidget):
 
         self.buttons = {}
 
+        self.sensor_groups = {
+            "baterias": {
+                "label": "BATERIAS",
+                "keys": ["bateria1", "bateria2"]
+            },
+            "agua": {
+                "label": "AGUA",
+                "keys": ["agua_limpa", "agua_suja"]
+            },
+            "temp": {
+                "label": "TEMP",
+                "keys": ["temp_motor"]
+            },
+            "consumo": {
+                "label": "CONSUMO",
+                "keys": ["consumo"]
+            }
+        }
         sensors = {
-            "bateria1": "BAT 1",
-            "bateria2": "BAT 2",
-            "temp_motor": "TEMP",
-            "agua_limpa": "AGUA",
+            "bateria1": "BATERIAS",
+            "temp_motor": "TEMP MOTOR",
+            "agua_limpa": "AGUAS",
         }
 
-        for key, label in sensors.items():
-            btn = QPushButton(label)
+        for group_key, group in self.sensor_groups.items():
+            btn = QPushButton(group["label"])
             btn.setFixedHeight(35)
 
-            btn.clicked.connect(lambda _, k=key: self.select_sensor(k))
+            btn.clicked.connect(lambda _, k=group_key: self.select_sensor(k))
             btn.setStyleSheet("""
                 background-color: #111;
                 color: #ffaa00;
@@ -765,8 +782,7 @@ class GraphWidget(QWidget):
                 color: #00ffcc;
             }
             """)
-
-            self.buttons[key] = btn
+            self.buttons[group_key] = btn
             self.btn_layout.addWidget(btn)
 
         # layout geral
@@ -776,8 +792,8 @@ class GraphWidget(QWidget):
 
         self.setLayout(layout)
 
-    def select_sensor(self, sensor):
-        self.selected_sensor = sensor
+    def select_sensor(self, group_key):
+        self.selected_sensor = group_key
         self.update_plot()
 
     def update_plot(self):
@@ -793,24 +809,37 @@ class GraphWidget(QWidget):
 
             self.figure.clear()
             ax = self.figure.add_subplot(111)
+            
+
+            group = self.sensor_groups[self.selected_sensor]
+
+            colors = ["#00ffcc", "#ffaa00"]
+
+            for i, key in enumerate(group["keys"]):
+                if key in df.columns:
+                    ax.plot(df["timestamp"], df[key],
+                            label=key.upper(),
+                            color=colors[i % len(colors)])
+
+            
+            ax.set_title(
+                group["label"],
+                color="#b0b0b0",
+                fontsize=12
+            )
+            ax.legend()
+            ax.tick_params(axis='x', colors="#00ffcc")
+            ax.tick_params(axis='y', colors="#00ffcc")
+            ax.tick_params(axis='x', rotation=45)
+
+            # estilo
             ax.grid(True)
             ax.set_facecolor("#1c1c1c")
             self.figure.set_facecolor("#1c1c1c")
             ax.tick_params(colors="#00ffcc")
             ax.spines[:].set_color("#00ffcc")
-
-
-            if self.selected_sensor in df.columns:
-                ax.plot(df["timestamp"], df[self.selected_sensor], color="#00ffcc")
-
-            ax.set_title(
-                self.selected_sensor.upper(),
-                color="#00ffcc",
-                fontsize=12
-            )
-            ax.tick_params(axis='x', colors="#00ffcc")
-            ax.tick_params(axis='y', colors="#00ffcc")
-            ax.tick_params(axis='x', rotation=45)
+            for spine in ax.spines.values():
+                spine.set_color("#00ffcc")
 
             self.canvas.draw()
 
