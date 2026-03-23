@@ -782,6 +782,7 @@ class GraphWidget(QWidget):
 
             btn.clicked.connect(lambda _, k=group_key: self.select_sensor(k))
             btn.setStyleSheet("""
+            QPushButton {
                 background-color: #111;
                 color: #ffaa00;
                 border: 2px solid black;
@@ -795,6 +796,8 @@ class GraphWidget(QWidget):
             self.buttons[group_key] = btn
             self.btn_layout.addWidget(btn)
 
+        self.update_button_styles()
+
         # layout geral
         layout = QVBoxLayout()
         layout.addLayout(self.btn_layout)
@@ -802,8 +805,35 @@ class GraphWidget(QWidget):
 
         self.setLayout(layout)
 
+    def update_button_styles(self):
+        for key, btn in self.buttons.items():
+
+            if key == self.selected_sensor:
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #00ffcc;
+                        color: #111;
+                        border: none;
+                        font-size: 18px;
+                    }
+                """)
+            else:
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #111;
+                        color: #ffaa00;
+                        border: none;
+                        font-size: 18px;
+                    }
+
+                    QPushButton:pressed {
+                        color: #00ffcc;
+                    }
+                """)
+
     def select_sensor(self, group_key):
         self.selected_sensor = group_key
+        self.update_button_styles()
         self.update_plot()
 
     def update_plot(self):
