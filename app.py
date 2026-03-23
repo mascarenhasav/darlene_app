@@ -798,7 +798,7 @@ class GraphWidget(QWidget):
         #self.last_update = time.time()
 
         try:
-            df = pd.read_csv("sensors_log.csv", sep=";")
+            df = pd.read_csv("sensors_log.csv")
             df["timestamp"] = pd.to_datetime(df["timestamp"])
             #df = df.tail(50)
 
