@@ -813,7 +813,9 @@ class GraphWidget(QWidget):
             colors = ["#00ffcc", "#ffaa00"]
 
             if self.selected_sensor == "temp":
-                ax.axhline(y=100, color="red", linestyle="--")            
+                ax.axhline(y=100, color="red", linestyle="--")
+
+            last_value = None        
 
             for i, key in enumerate(group["keys"]):
                 if key in df.columns:
