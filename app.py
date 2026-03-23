@@ -1,3 +1,5 @@
+from sys import last_value
+
 from PySide6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout,
     QPushButton, QHBoxLayout, QFrame
@@ -760,11 +762,6 @@ class GraphWidget(QWidget):
                 "keys": ["consumo"]
             }
         }
-        sensors = {
-            "bateria1": "BATERIAS",
-            "temp_motor": "TEMP MOTOR",
-            "agua_limpa": "AGUAS",
-        }
 
         for group_key, group in self.sensor_groups.items():
             btn = QPushButton(group["label"])
@@ -815,11 +812,19 @@ class GraphWidget(QWidget):
 
             colors = ["#00ffcc", "#ffaa00"]
 
+            if self.selected_sensor == "temp":
+                ax.axhline(y=100, color="red", linestyle="--")            
+
             for i, key in enumerate(group["keys"]):
                 if key in df.columns:
+                    last_value = df[key].iloc[-1]
                     ax.plot(df["timestamp"], df[key],
-                            label=key.upper(),
+                            label=f"{key.upper()} ({last_value})",
                             color=colors[i % len(colors)])
+                    ax.scatter(df["timestamp"].iloc[-1],
+                        df[key].iloc[-1],
+                        color="#ffffff",
+                        zorder=5)
 
             
             ax.set_title(
@@ -827,6 +832,7 @@ class GraphWidget(QWidget):
                 color="#b0b0b0",
                 fontsize=12
             )
+            
             ax.legend()
             ax.tick_params(axis='x', colors="#00ffcc")
             ax.tick_params(axis='y', colors="#00ffcc")
@@ -841,6 +847,11 @@ class GraphWidget(QWidget):
             for spine in ax.spines.values():
                 spine.set_color("#00ffcc")
 
+            self.figure.tight_layout()
+            self.figure.subplots_adjust(bottom=0.25)
+
+            self.canvas.setMinimumHeight(200)
+            self.canvas.setMaximumHeight(300)
             self.canvas.draw()
 
         except Exception as e:
