@@ -747,9 +747,21 @@ class GraphWidget(QWidget):
 
         self.btn_zoom_in = QPushButton("+")
         self.btn_zoom_out = QPushButton("-")
-
+        
         for btn in [self.btn_zoom_in, self.btn_zoom_out]:
             btn.setFixedSize(40, 30)
+            btn.setStyleSheet("""
+            QPushButton {
+                background-color: #111;
+                color: #ffaa00;
+                border: 2px solid black;
+                font-size: 18px;
+            }
+
+            QPushButton:pressed {
+                color: #00ffcc;
+            }
+            """)
 
         self.btn_layout.addWidget(self.btn_zoom_in)
         self.btn_layout.addWidget(self.btn_zoom_out)
@@ -811,9 +823,9 @@ class GraphWidget(QWidget):
             if key == self.selected_sensor:
                 btn.setStyleSheet("""
                     QPushButton {
-                        background-color: #00ffcc;
-                        color: #111;
-                        border: none;
+                        background-color: #ffaa00;
+                        color: #00ffcc;
+                        border: 2px solid black;
                         font-size: 18px;
                     }
                 """)
@@ -822,7 +834,7 @@ class GraphWidget(QWidget):
                     QPushButton {
                         background-color: #111;
                         color: #ffaa00;
-                        border: none;
+                        border: 2px solid black;
                         font-size: 18px;
                     }
 
