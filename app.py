@@ -821,11 +821,10 @@ class GraphWidget(QWidget):
                     ax.plot(df["timestamp"], df[key],
                             label=f"{key.upper()} ({last_value})",
                             color=colors[i % len(colors)])
-                    ax.scatter(df["timestamp"].iloc[-1],
-                        df[key].iloc[-1],
-                        color="#ffffff",
-                        zorder=5)
-
+                    ax.scatter(df["timestamp"].iloc[-1], 
+                               df[key].iloc[-1],
+                               color="#ffffff",
+                               zorder=5)
             
             ax.set_title(
                 group["label"],
@@ -848,10 +847,10 @@ class GraphWidget(QWidget):
                 spine.set_color("#00ffcc")
 
             self.figure.tight_layout()
-            self.figure.subplots_adjust(bottom=0.25)
+            #self.figure.subplots_adjust(bottom=0.25)
 
-            self.canvas.setMinimumHeight(200)
-            self.canvas.setMaximumHeight(300)
+            #self.canvas.setMinimumHeight(200)
+            #self.canvas.setMaximumHeight(300)
             self.canvas.draw()
 
         except Exception as e:
