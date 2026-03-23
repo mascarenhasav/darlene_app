@@ -846,7 +846,7 @@ class GraphWidget(QWidget):
             for spine in ax.spines.values():
                 spine.set_color("#00ffcc")
 
-            self.figure.tight_layout()
+            #self.figure.tight_layout()
             #self.figure.subplots_adjust(bottom=0.25)
 
             #self.canvas.setMinimumHeight(200)
