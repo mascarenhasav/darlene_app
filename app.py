@@ -731,7 +731,7 @@ class GraphWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.selected_sensor = "bateria1"
+        self.selected_sensor = "baterias"
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
@@ -815,14 +815,12 @@ class GraphWidget(QWidget):
 
         try:
             df = pd.read_csv("sensors_log.csv")
-            
-
-            df = df.iloc[start:end]
             df["timestamp"] = pd.to_datetime(df["timestamp"])
             #df = df.tail(50)
             df = df.tail(500)  # limite total
             start = max(0, len(df) - self.window_size - self.offset)
             end = len(df) - self.offset
+            df = df.iloc[start:end]
 
             self.figure.clear()
             ax = self.figure.add_subplot(111)
