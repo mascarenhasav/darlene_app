@@ -824,7 +824,7 @@ class GraphWidget(QWidget):
                 btn.setStyleSheet("""
                     QPushButton {
                         background-color: #00ffcc;
-                        color: #b0b0b0;
+                        color: #111;
                         border: 1px solid black;
                         font-size: 18px;
                     }
