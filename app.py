@@ -821,10 +821,10 @@ class GraphWidget(QWidget):
                     ax.plot(df["timestamp"], df[key],
                             label=f"{key.upper()} ({last_value})",
                             color=colors[i % len(colors)])
-                    ax.scatter(df["timestamp"].iloc[-1], 
-                               df[key].iloc[-1],
-                               color="#ffffff",
-                               zorder=5)
+                    #x.scatter(df["timestamp"].iloc[-1], 
+                               #df[key].iloc[-1],
+                               #color="#ffffff",
+                               #zorder=5)
             
             ax.set_title(
                 group["label"],
