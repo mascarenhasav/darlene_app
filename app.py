@@ -817,14 +817,14 @@ class GraphWidget(QWidget):
 
             for i, key in enumerate(group["keys"]):
                 if key in df.columns:
-                    #last_value = df[key].iloc[-1]
+                    last_value = df[key].iloc[-1]
                     ax.plot(df["timestamp"], df[key],
                             label=f"{key.upper()} ({last_value})",
                             color=colors[i % len(colors)])
-                    #x.scatter(df["timestamp"].iloc[-1], 
-                               #df[key].iloc[-1],
-                               #color="#ffffff",
-                               #zorder=5)
+                    ax.scatter(df["timestamp"].iloc[-1], 
+                               df[key].iloc[-1],
+                               color="#ffffff",
+                               zorder=5)
             
             ax.set_title(
                 group["label"],
