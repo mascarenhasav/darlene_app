@@ -736,11 +736,26 @@ class GraphWidget(QWidget):
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.last_update = 0
+        self.offset = 0          # posição no histórico
+        self.window_size = 50    # quantidade de pontos visíveis
+        self.drag_start_x = None
 
         # botões
         self.btn_layout = QHBoxLayout()
 
         self.buttons = {}
+
+        self.btn_zoom_in = QPushButton("+")
+        self.btn_zoom_out = QPushButton("-")
+
+        for btn in [self.btn_zoom_in, self.btn_zoom_out]:
+            btn.setFixedSize(40, 30)
+
+        self.btn_layout.addWidget(self.btn_zoom_in)
+        self.btn_layout.addWidget(self.btn_zoom_out)
+
+        self.btn_zoom_in.clicked.connect(self.zoom_in)
+        self.btn_zoom_out.clicked.connect(self.zoom_out)
 
         self.sensor_groups = {
             "baterias": {
@@ -797,10 +812,17 @@ class GraphWidget(QWidget):
 
         #self.last_update = time.time()
 
+
         try:
             df = pd.read_csv("sensors_log.csv")
+            
+
+            df = df.iloc[start:end]
             df["timestamp"] = pd.to_datetime(df["timestamp"])
             #df = df.tail(50)
+            df = df.tail(500)  # limite total
+            start = max(0, len(df) - self.window_size - self.offset)
+            end = len(df) - self.offset
 
             self.figure.clear()
             ax = self.figure.add_subplot(111)
@@ -827,7 +849,7 @@ class GraphWidget(QWidget):
                                zorder=5)
             
             ax.set_title(
-                group["label"],
+                f"{group['label']} | janela: {self.window_size}",
                 color="#b0b0b0",
                 fontsize=12
             )
@@ -855,6 +877,37 @@ class GraphWidget(QWidget):
 
         except Exception as e:
             print("Erro gráfico:", e)
+
+    def mousePressEvent(self, event):
+        self.drag_start_x = event.position().x()
+
+    def mouseMoveEvent(self, event):
+        if self.drag_start_x is None:
+            return
+
+        dx = event.position().x() - self.drag_start_x
+
+        if abs(dx) > 20:  # sensibilidade
+            if dx > 0:
+                self.offset += 5   # vai para trás no tempo
+            else:
+                self.offset -= 5   # vai para frente
+
+            self.offset = max(0, self.offset)
+
+            self.drag_start_x = event.position().x()
+            self.update_plot()
+
+    def mouseReleaseEvent(self, event):
+        self.drag_start_x = None
+
+    def zoom_in(self):
+        self.window_size = max(10, self.window_size - 5)
+        self.update_plot()
+
+    def zoom_out(self):
+        self.window_size = min(200, self.window_size + 5)
+        self.update_plot()
 
 app = QApplication([])
 
