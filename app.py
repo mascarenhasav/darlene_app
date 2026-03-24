@@ -515,7 +515,7 @@ class Dashboard(QWidget):
 
             current_time = time.time()
 
-            if current_time - self.last_log_time >= 60:
+            if current_time - self.last_log_time >= 60000000:
                 self.log_sensors(sensor_data)
                 self.last_log_time = current_time
 
