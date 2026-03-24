@@ -747,7 +747,7 @@ class GraphWidget(QWidget):
 
         self.btn_zoom_in = QPushButton("+")
         self.btn_zoom_out = QPushButton("-")
-        
+
         for btn in [self.btn_zoom_in, self.btn_zoom_out]:
             btn.setFixedSize(40, 30)
             btn.setStyleSheet("""
@@ -768,6 +768,13 @@ class GraphWidget(QWidget):
 
         self.btn_zoom_in.clicked.connect(self.zoom_in)
         self.btn_zoom_out.clicked.connect(self.zoom_out)
+
+        self.y_limits = {
+            "baterias": (10, 15),
+            "agua": (0, 100),
+            "temp": (60, 120),
+            "consumo": (0, 100),
+        }
 
         self.sensor_groups = {
             "baterias": {
@@ -866,16 +873,23 @@ class GraphWidget(QWidget):
 
             self.figure.clear()
             ax = self.figure.add_subplot(111)
-            
 
             group = self.sensor_groups[self.selected_sensor]
 
             colors = ["#00ffcc", "#ffaa00"]
 
-            if self.selected_sensor == "temp":
-                ax.axhline(y=100, color="red", linestyle="--")
+            if self.selected_sensor == "baterias":
+                ax.axhline(y=11.5, color="blue", linestyle="--")
+                ax.axhline(y=14.0, color="red", linestyle="--")
+            elif self.selected_sensor == "temp":
+                ax.axhline(y=104, color="red", linestyle="--")
+            elif self.selected_sensor == "agua":
+                ax.axhline(y=20, color="blue", linestyle="--")
+                ax.axhline(y=80, color="red", linestyle="--")
+            elif self.selected_sensor == "consumo":
+                ax.axhline(y=80, color="red", linestyle="--")
 
-            last_value = None        
+            last_value = None
 
             for i, key in enumerate(group["keys"]):
                 if key in df.columns:
@@ -887,7 +901,9 @@ class GraphWidget(QWidget):
                                df[key].iloc[-1],
                                color="#ffffff",
                                zorder=5)
-            
+            if self.selected_sensor in self.y_limits:
+                ymin, ymax = self.y_limits[self.selected_sensor]
+                ax.set_ylim(ymin, ymax)
             ax.set_title(
                 f"{group['label']} | janela: {self.window_size}",
                 color="#b0b0b0",
