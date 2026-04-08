@@ -2,7 +2,7 @@
 
 cd /home/darlene/git/darlene_app
 
-LOG_FILE="/home/darlene/git/darlene_app/control.log"
+LOG_FILE="/home/darlene/git/darlene_app/control.ilog"
 
 echo "---- $(date) ----" >> $LOG_FILE
 
