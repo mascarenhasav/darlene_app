@@ -1,0 +1,31 @@
+/home/darlene/start_darlene.sh: line 14: home/darlene/git/darlene_app/app.py: No such file or directory
+Traceback (most recent call last):
+  File "/home/darlene/git/darlene_app/app.py", line 361, in update_cursor
+    def update_cursor(self):
+    
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/darlene/git/darlene_app/app.py", line 361, in update_cursor
+    def update_cursor(self):
+    
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/darlene/git/darlene_app/app.py", line 387, in update_data
+    def update_data(self):
+    
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/darlene/git/darlene_app/app.py", line 361, in update_cursor
+    def update_cursor(self):
+    
+KeyboardInterrupt
+Already up to date.
+Already up to date.
+Modo código ativado
+Código: 1
+Código: 12
+Código: 123
+Código: 1234
+Already up to date.
+Already up to date.
+Already up to date.
