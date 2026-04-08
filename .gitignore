@@ -7,7 +7,6 @@ venv/
 .env
 .csv
 
-
 # Data / outputs
 #out/
 #base_dados/
@@ -20,3 +19,6 @@ venv/
 # IDE
 .vscode/
 .idea/
+
+
+tmp.json
